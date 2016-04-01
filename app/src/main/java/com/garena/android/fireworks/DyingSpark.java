@@ -18,7 +18,7 @@ public class DyingSpark extends SparkBase{
     public DyingSpark(float startX, float startY, float vx, float vy, int color) {
         super(startX, startY, vx, vy);
         paint = new Paint();
-        paint.setAntiAlias(false);
+        paint.setAntiAlias(true);
         paint.setColor(color);
     }
 
