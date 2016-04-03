@@ -48,7 +48,7 @@ public class NightScene extends SurfaceView{
     private ArrayList<SparkBase> recycleList = new ArrayList<>();
 
     float pixelToMeterRatio; //pixels per meter
-    float sceneWidth, sceneDepth = 100f, sceneHeight = 400f; //expect to support scene with 200 m
+    float sceneWidth, sceneDepth = 80f, sceneHeight = 200f; //expect to support scene with 200 m
     private boolean isShowOngoing = true;
 
     protected void init(){
@@ -58,17 +58,18 @@ public class NightScene extends SurfaceView{
         Log.d(TAG, "screen width:" + sceneWidth);
         sceneWidthHalf = sceneWidth  / 2;
         sceneHeightHalf = sceneHeight / 2;
-        Point3f initStart = new Point3f(0, 0, -30f);
-        Vector3f initVelocity = new Vector3f(0, 30f, 0);
 
-        Vector3f initVelocity2 = new Vector3f(0, 20f, 0);
+        Point3f initStart = new Point3f(0, -30f, -30f);
+        Vector3f initVelocity = new Vector3f(0, 20f, 0);
+
+        Vector3f initVelocity2 = new Vector3f(0, 15f, 0);
         sparks.add(new Spark(initStart, initVelocity));
 
-        /*Point3f initStart2 = new Point3f(0, 0, -20f);
+        Point3f initStart2 = new Point3f(10f, -20f, -20f);
         sparks.add(new Spark(initStart2, initVelocity));
 
-        Point3f initStart3 = new Point3f(50f, 0, 0);
-        sparks.add(new Spark(initStart3, initVelocity2));*/
+        Point3f initStart3 = new Point3f(50f, -10f, 20f);
+        sparks.add(new Spark(initStart3, initVelocity2));
     }
 
     protected void addSpark(SparkBase base){

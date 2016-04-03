@@ -25,7 +25,7 @@ public class Spark extends SparkBase {
         paint = new Paint();
         paint.setAntiAlias(true);
         paint.setColor(Color.WHITE);
-        this.scale = 1.5f;
+        this.scale = 2.5f;
         this.gravity = -0.3f;
         this.drag = 0.92f;
     }
@@ -48,7 +48,7 @@ public class Spark extends SparkBase {
         int colorA = Color.rgb(random.nextInt(255), random.nextInt(255), random.nextInt(255));
         int colorB = Color.rgb(random.nextInt(255), random.nextInt(255), random.nextInt(255));
 
-        float rootSpeed = random.nextFloat() * 2.5f + 0.5f;
+        float rootSpeed = random.nextFloat() * 0.5f + 0.5f;
 
         Vector3f baseV = new Vector3f(rootSpeed, 0, rootSpeed);
 
@@ -59,15 +59,38 @@ public class Spark extends SparkBase {
             Vector3f newVelocity = new Vector3f(baseV);
             MathHelper.rotate(newVelocity, Math.random() * 3, Math.random() * 3, Math.random() * 3);
             newVelocity.scale(randomFactor);
+
             Vector3f newVelocityInvert = new Vector3f();
             newVelocityInvert.scale(-1f, newVelocity);
-            ShellSpark sparkA = new ShellSpark(this.mPosition, newVelocity, colorA);
-            ShellSpark sparkB = new ShellSpark(this.mPosition, newVelocityInvert, colorB);
+            ShellSpark sparkA = new ShellSpark(this.mPosition, newVelocity, 0.5f, colorA);
+            ShellSpark sparkB = new ShellSpark(this.mPosition, newVelocityInvert, 0.5f, colorA);
             scene.addSpark(sparkA);
             scene.addSpark(sparkB);
         }
 
-        //TODO explode the shell
+        float ringScale = 1.05f * random.nextFloat() * 0.6f;
+        float rootSpeedRing = random.nextFloat() * 1.5f + 1.0f;
+        baseV = new Vector3f(rootSpeedRing, 0, rootSpeedRing);
 
+        float rx = 1 - 2 * random.nextFloat();
+        float rz = 1 - 2 * random.nextFloat();
+        Vector3f ringVelocity = new Vector3f(baseV);
+        //explode the ring
+        for (int i = 0; i < 72; i++){
+            MathHelper.rotateY(ringVelocity, random.nextDouble() * 3);
+            Vector3f newVelocity = new Vector3f(ringVelocity);
+            MathHelper.rotateX(newVelocity,rx);
+            MathHelper.rotateX(newVelocity,rz);
+            newVelocity.scale(random.nextFloat() / 5 + 1.5f);
+
+            Vector3f newVelocityInvert = new Vector3f();
+            newVelocityInvert.scale(-1f, newVelocity);
+
+            ShellSpark sparkA = new ShellSpark(this.mPosition, newVelocity, ringScale, colorB);
+            ShellSpark sparkB = new ShellSpark(this.mPosition, newVelocityInvert, ringScale, colorB);
+
+            scene.addSpark(sparkA);
+            scene.addSpark(sparkB);
+        }
     }
 }

@@ -17,33 +17,67 @@ public class MathHelper {
      * @param z rotate around z
      */
     public static void rotate(Tuple3f origin, double x, double y, double z){
-        //apply x
-
+        //rotate X
         double xd = (double)origin.x, yd = (double)origin.y, zd = (double)origin.z;
 
         double sinX =  Math.sin(x);
         double cosX = Math.cos(x);
 
-        double xx = xd * cosX - yd * sinX;
-        double yy = xd * sinX + yd * cosX;
+        double yy = yd * cosX - zd * sinX;
+        double zz = yd * sinX + zd * cosX;
 
+        //rotate Y
         double sinY = Math.sin(y);
         double cosY = Math.cos(y);
 
-        double xxx = xx * cosY + zd * sinY;
-        double zz = - xx * sinY + z * cosY;
+        double xx = xd * cosY + zd * sinY;
+        double zzz = - xd * sinY + z * cosY;
 
+        //rotate Z
         //xxx, yy, zz
         double sinZ  = Math.sin(z);
         double cosZ = Math.cos(z);
 
-        double yyy = yy * cosZ - zz * sinZ;
-        double zzz = yy * sinZ + zz * cosZ;
+        double xxx = xx * cosZ - yy * sinZ;
+        double yyy = xx * sinZ + yy * cosZ;
 
         origin.x = (float)xxx;
         origin.y = (float)yyy;
         origin.z = (float)zzz;
-
     }
 
+    public static void rotateX(Tuple3f origin, double x){
+        double yd = (double)origin.y, zd = (double)origin.z;
+
+        double sinX =  Math.sin(x);
+        double cosX = Math.cos(x);
+
+        double yy = yd * cosX - zd * sinX;
+        double zz = yd * sinX + zd * cosX;
+
+        origin.y = (float)yy;
+        origin.z = (float)zz;
+    }
+
+
+    public static void rotateY(Tuple3f origin, double y){
+        double xd = (double)origin.x, zd = (double)origin.z;
+        double sinY =  Math.sin(y);
+        double cosY = Math.cos(y);
+
+        double xx = xd * cosY + zd * sinY;
+        double zz = - xd * sinY + zd * cosY;
+        origin.x = (float)xx;
+        origin.z = (float)zz;
+    }
+
+    public static void rotateZ(Tuple3f origin, double z){
+        double xd = (double)origin.x, yd = (double)origin.y;
+        double sinZ =  Math.sin(z);
+        double cosZ = Math.cos(z);
+        double xx = xd * cosZ - yd * sinZ;
+        double yy = xd * sinZ + yd * cosZ;
+        origin.x = (float)xx;
+        origin.y = (float)yy;
+    }
 }
