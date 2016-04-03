@@ -2,18 +2,22 @@ package com.garena.android.fireworks;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.SurfaceView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import javax.vecmath.Point3f;
 import javax.vecmath.Vector3f;
+import javax.xml.transform.stream.StreamSource;
 
 /**
  * Stage for animation
@@ -48,8 +52,9 @@ public class NightScene extends SurfaceView{
     private ArrayList<SparkBase> recycleList = new ArrayList<>();
 
     float pixelToMeterRatio; //pixels per meter
-    float sceneWidth, sceneDepth = 80f, sceneHeight = 200f; //expect to support scene with 200 m
+    float sceneWidth, sceneDepth = 120f, sceneHeight = 200f; //expect to support scene with 200 m
     private boolean isShowOngoing = true;
+    private Random mRandom;
 
     protected void init(){
         //add the sparks
@@ -70,13 +75,29 @@ public class NightScene extends SurfaceView{
 
         Point3f initStart3 = new Point3f(50f, -10f, 20f);
         sparks.add(new Spark(initStart3, initVelocity2));
+
+        lastFireTime = System.currentTimeMillis();
+        mRandom = new Random();
     }
 
     protected void addSpark(SparkBase base){
         sparks.add(base);
     }
 
+    private void randomFire(){
+        if (System.currentTimeMillis() - lastFireTime > 5000){
+            float x =  -mRandom.nextFloat() * 0.8f * sceneWidth + sceneWidthHalf;
+            float y =  -mRandom.nextFloat() * 20;
+            float z = -mRandom.nextFloat() * sceneDepth;
+            Point3f pos = new Point3f(x, y, z);
+            Vector3f v = new Vector3f(0, 20f, 0);
+            sparks.add(new Spark(pos, v));
+            lastFireTime = System.currentTimeMillis();
+        }
+    }
+
     long time;
+    long lastFireTime = 0;
 
     protected void stop(){
         isShowOngoing = false;
@@ -120,8 +141,7 @@ public class NightScene extends SurfaceView{
                             //DO NOTHING
                         }
                     } else {
-
-                        isShowOngoing = false;
+                        randomFire();
                     }
                     time = newTime;
                     getHolder().unlockCanvasAndPost(canvas);

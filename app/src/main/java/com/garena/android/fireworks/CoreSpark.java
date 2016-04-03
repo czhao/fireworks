@@ -11,21 +11,21 @@ import javax.vecmath.Vector3f;
  *
  * @author zhaocong
  */
-public class ShellSpark extends SparkBase{
+public class CoreSpark extends SparkBase{
 
     protected Paint paint;
 
-    final long lifeSpan = 3000; // life span 4 seconds
+    final long lifeSpan = 3500; // life span 4 seconds
 
 
-    public ShellSpark(Point3f position, Vector3f v, float scale, int color) {
+    public CoreSpark(Point3f position, Vector3f v, float scale, int color) {
         super(position, v);
         paint = new Paint();
         paint.setAntiAlias(true);
         paint.setColor(color);
         this.scale = scale;
-        this.gravity = -0.85f;
-        this.drag = 0.985f;
+        this.gravity = -0.75f;
+        this.drag = 0.96f;
     }
 
     @Override

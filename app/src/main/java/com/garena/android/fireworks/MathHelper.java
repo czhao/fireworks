@@ -17,33 +17,9 @@ public class MathHelper {
      * @param z rotate around z
      */
     public static void rotate(Tuple3f origin, double x, double y, double z){
-        //rotate X
-        double xd = (double)origin.x, yd = (double)origin.y, zd = (double)origin.z;
-
-        double sinX =  Math.sin(x);
-        double cosX = Math.cos(x);
-
-        double yy = yd * cosX - zd * sinX;
-        double zz = yd * sinX + zd * cosX;
-
-        //rotate Y
-        double sinY = Math.sin(y);
-        double cosY = Math.cos(y);
-
-        double xx = xd * cosY + zd * sinY;
-        double zzz = - xd * sinY + z * cosY;
-
-        //rotate Z
-        //xxx, yy, zz
-        double sinZ  = Math.sin(z);
-        double cosZ = Math.cos(z);
-
-        double xxx = xx * cosZ - yy * sinZ;
-        double yyy = xx * sinZ + yy * cosZ;
-
-        origin.x = (float)xxx;
-        origin.y = (float)yyy;
-        origin.z = (float)zzz;
+        rotateX(origin,x);
+        rotateY(origin,y);
+        rotateZ(origin,z);
     }
 
     public static void rotateX(Tuple3f origin, double x){
