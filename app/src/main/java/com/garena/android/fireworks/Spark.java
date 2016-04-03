@@ -69,10 +69,10 @@ public class Spark extends SparkBase {
         }
 
         //explore the shell
-        float shellScale = 0.5f * random.nextFloat() + 0.3f;
-        float rootSpeedShell = random.nextFloat() * 0.5f + 1f;
+        float shellScale = 0.6f * random.nextFloat() + 0.6f;
+        float rootSpeedShell = random.nextFloat() * 1.8f + 0.8f; // 0.8 - 2.6
         Vector3f shellVelocity = new Vector3f(rootSpeed, rootSpeedShell, rootSpeedShell);
-        for (int i = 0; i < 64; i++){
+        for (int i = 0; i < 72; i++){
             Vector3f newVelocity = new Vector3f(shellVelocity);
             MathHelper.rotate(newVelocity, Math.random() * 6, Math.random() * 6, Math.random() * 6);
 
@@ -86,8 +86,8 @@ public class Spark extends SparkBase {
             scene.addSpark(sparkB);
         }
 
-        float ringScale = 1.05f * random.nextFloat() * 0.6f;
-        float rootSpeedRing = random.nextFloat() * 1.0f + 1.0f;
+        float ringScale = 0.65f * random.nextFloat() * 0.6f;
+        float rootSpeedRing = random.nextFloat() * 1.0f + 1.5f; //1.5-2.5
         baseV = new Vector3f(rootSpeedRing, 0, rootSpeedRing);
 
         float rx = 1 - 2 * random.nextFloat();
