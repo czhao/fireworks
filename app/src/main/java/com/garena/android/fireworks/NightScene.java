@@ -161,7 +161,6 @@ public class NightScene extends SurfaceView{
     }
 
     private float pixelToDp(float px){
-        float dp = px / (densityDpi / DisplayMetrics.DENSITY_DEFAULT);
-        return dp;
+        return px / (densityDpi / DisplayMetrics.DENSITY_DEFAULT);
     }
 }
