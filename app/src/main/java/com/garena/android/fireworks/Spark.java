@@ -6,6 +6,9 @@ import android.graphics.Paint;
 
 import java.util.Random;
 
+import javax.vecmath.Point3f;
+import javax.vecmath.Vector3f;
+
 /**
  * PLEASE FILL IN THE CLASS DESCRIPTION
  *
@@ -17,15 +20,20 @@ public class Spark extends SparkBase {
 
     private final long lifeSpan = 4000l;
 
-    public Spark(float positionX, float positionY, float initVx, float initVy) {
-        super(positionX, positionY, initVx, initVy);
+    public Spark(Point3f position, Vector3f v) {
+        super(position, v);
         paint = new Paint();
         paint.setAntiAlias(true);
         paint.setColor(Color.WHITE);
+        this.scale = 1.5f;
+        this.gravity = -0.3f;
+        this.drag = 0.92f;
     }
 
-    public void draw(Canvas canvas, float screenX, float screenY, boolean doEffects) {
-        canvas.drawCircle(screenX, screenY, 10f, paint);
+
+    @Override
+    public void draw(Canvas canvas, float screenX, float screenY, float scale, boolean doEffects) {
+        canvas.drawCircle(screenX, screenY, 2f * scale, paint);
     }
 
     @Override
@@ -40,20 +48,26 @@ public class Spark extends SparkBase {
         int colorA = Color.rgb(random.nextInt(255), random.nextInt(255), random.nextInt(255));
         int colorB = Color.rgb(random.nextInt(255), random.nextInt(255), random.nextInt(255));
 
-        for (int i = 1; i < 50 ; i++) {
-            scene.addSpark(new DyingSpark(this.mPositionX, this.mPositionY, random.nextInt(20), mVelocityY + random.nextInt(20), colorA ));
+        float rootSpeed = random.nextFloat() * 2.5f + 0.5f;
+
+        Vector3f baseV = new Vector3f(rootSpeed, 0, rootSpeed);
+
+        //explode the core
+        for (int i = 0; i < 24; i++){
+            //generate the sparks
+            float randomFactor = (random.nextFloat() + 19)/20f;
+            Vector3f newVelocity = new Vector3f(baseV);
+            MathHelper.rotate(newVelocity, Math.random() * 3, Math.random() * 3, Math.random() * 3);
+            newVelocity.scale(randomFactor);
+            Vector3f newVelocityInvert = new Vector3f();
+            newVelocityInvert.scale(-1f, newVelocity);
+            ShellSpark sparkA = new ShellSpark(this.mPosition, newVelocity, colorA);
+            ShellSpark sparkB = new ShellSpark(this.mPosition, newVelocityInvert, colorB);
+            scene.addSpark(sparkA);
+            scene.addSpark(sparkB);
         }
 
-        for (int i = 1; i < 50 ; i++) {
-            scene.addSpark(new DyingSpark(this.mPositionX, this.mPositionY, -random.nextInt(20), mVelocityY + random.nextInt(20), colorA));
-        }
+        //TODO explode the shell
 
-        for (int i = 1; i < 50 ; i++) {
-            scene.addSpark(new DyingSpark(this.mPositionX, this.mPositionY, -random.nextInt(30) + 10, mVelocityY + random.nextInt(20), colorB));
-        }
-
-        for (int i = 1; i < 50 ; i++) {
-            scene.addSpark(new DyingSpark(this.mPositionX, this.mPositionY, -random.nextInt(30) - 10, mVelocityY + random.nextInt(20), colorB));
-        }
     }
 }

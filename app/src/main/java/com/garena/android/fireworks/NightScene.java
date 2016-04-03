@@ -6,10 +6,14 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.SurfaceView;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.vecmath.Point3f;
+import javax.vecmath.Vector3f;
 
 /**
  * Stage for animation
@@ -17,6 +21,10 @@ import java.util.List;
  * @author zhaocong
  */
 public class NightScene extends SurfaceView{
+
+    private float sceneWidthHalf, sceneHeightHalf;
+
+    private final static String TAG = "scene";
 
     public NightScene(Context context) {
         super(context);
@@ -40,15 +48,27 @@ public class NightScene extends SurfaceView{
     private ArrayList<SparkBase> recycleList = new ArrayList<>();
 
     float pixelToMeterRatio; //pixels per meter
-    float sceneWidth, sceneHeight = 200f; //expect to support scene with 200 m
+    float sceneWidth, sceneDepth = 100f, sceneHeight = 400f; //expect to support scene with 200 m
     private boolean isShowOngoing = true;
 
     protected void init(){
         //add the sparks
         pixelToMeterRatio =  getHeight() / sceneHeight;
-        sceneWidth = getWidth() / pixelToMeterRatio;
-        sparks.add(new Spark(sceneWidth/2, 0, 0 ,40f));
+        sceneWidth = getWidth() / pixelToMeterRatio; //dynamically calculate the width in meters
+        Log.d(TAG, "screen width:" + sceneWidth);
+        sceneWidthHalf = sceneWidth  / 2;
+        sceneHeightHalf = sceneHeight / 2;
+        Point3f initStart = new Point3f(0, 0, -30f);
+        Vector3f initVelocity = new Vector3f(0, 30f, 0);
 
+        Vector3f initVelocity2 = new Vector3f(0, 20f, 0);
+        sparks.add(new Spark(initStart, initVelocity));
+
+        /*Point3f initStart2 = new Point3f(0, 0, -20f);
+        sparks.add(new Spark(initStart2, initVelocity));
+
+        Point3f initStart3 = new Point3f(50f, 0, 0);
+        sparks.add(new Spark(initStart3, initVelocity2));*/
     }
 
     protected void addSpark(SparkBase base){
@@ -79,9 +99,11 @@ public class NightScene extends SurfaceView{
                             recycleList.add(s);
                         } else {
                             PhysicsEngine.move(s, timeDelta);
-                            int pixelX = (int) (s.mPositionX * pixelToMeterRatio);
-                            int pixelY = (int) (screenHeight - s.mPositionY * pixelToMeterRatio);
-                            s.draw(canvas, pixelX, pixelY, true);
+                            //convert 3D to 2D
+                            float scale = sceneDepth / (sceneDepth + s.mPosition.z);
+                            float x2d = s.mPosition.x * scale + sceneWidthHalf;
+                            float y2d = s.mPosition.y * scale + sceneHeightHalf;
+                            s.draw(canvas, (int)(x2d * pixelToMeterRatio), screenHeight - (int)(y2d * pixelToMeterRatio),scale, true);
                         }
                     }
                     sparks.removeAll(recycleList);

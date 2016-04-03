@@ -47,7 +47,18 @@ public class HomeActivity extends AppCompatActivity{
         super.onResume();
         //generate the sparks
         if (isSurfaceCreated) {
-            mNightScene.play();
+            mNightScene.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mNightScene.play();
+                }
+            }, 2000);
         }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mNightScene.stop();
     }
 }
