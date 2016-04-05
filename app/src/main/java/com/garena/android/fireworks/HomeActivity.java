@@ -1,5 +1,6 @@
 package com.garena.android.fireworks;
 
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.SurfaceHolder;
@@ -42,6 +43,7 @@ public class HomeActivity extends AppCompatActivity{
 
         //keep the screen on
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        this.setVolumeControlStream(AudioManager.STREAM_MUSIC);
     }
 
     @Override
@@ -62,5 +64,11 @@ public class HomeActivity extends AppCompatActivity{
     protected void onPause() {
         super.onPause();
         mNightScene.stop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mNightScene.onDestroy();
     }
 }

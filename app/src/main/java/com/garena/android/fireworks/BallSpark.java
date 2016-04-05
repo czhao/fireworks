@@ -20,6 +20,8 @@ public class BallSpark extends Spark {
 
     @Override
     public void onExplosion(NightScene scene) {
+        scene.playExplosionSound();
+
         Random random = new Random();
 
         int colorA = Color.rgb(random.nextInt(255), random.nextInt(255), random.nextInt(255));

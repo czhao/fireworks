@@ -24,13 +24,14 @@ public class WaterfallSpark extends Spark {
 
     @Override
     public void onExplosion(NightScene scene) {
+        scene.playExplosionSound();
         int colorA = Color.rgb(random.nextInt(255), random.nextInt(255), random.nextInt(255));
 
         float ringScale = 0.95f * random.nextFloat() * 0.8f;
         float rootSpeedRing = random.nextFloat() * 1.8f + 4.8f;
         Vector3f baseV = new Vector3f(rootSpeedRing, 0, 0);
 
-        float ry = 1 - 0.5f * random.nextFloat();
+        float ry = 1f - 0.5f * random.nextFloat();
         MathHelper.rotateY(baseV, ry);
         float incremental = rootSpeedRing / WATERFALL_WIDTH;
 
@@ -40,8 +41,8 @@ public class WaterfallSpark extends Spark {
             baseV.x -= incremental;
             Vector3f newVelocityInvert = new Vector3f(newVelocity);
             newVelocityInvert.x = - newVelocity.x;
-            RingSpark sparkA = new RingSpark(this.mPosition, newVelocity, ringScale, colorA, -3f, 10);
-            RingSpark sparkB = new RingSpark(this.mPosition, newVelocityInvert, ringScale, colorA, -3f, 10);
+            RingSpark sparkA = new RingSpark(this.mPosition, newVelocity, ringScale, colorA, -2f, 8);
+            RingSpark sparkB = new RingSpark(this.mPosition, newVelocityInvert, ringScale, colorA, -2f, 8);
             scene.addSpark(sparkA);
             scene.addSpark(sparkB);
         }

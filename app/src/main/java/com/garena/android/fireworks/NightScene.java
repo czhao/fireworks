@@ -6,6 +6,10 @@ import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
+import android.media.SoundPool;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.view.SurfaceView;
@@ -13,9 +17,12 @@ import android.view.SurfaceView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Callable;
 
 import javax.vecmath.Point3f;
 import javax.vecmath.Vector3f;
+
+import bolts.Task;
 
 /**
  * Stage for animation
@@ -57,8 +64,13 @@ public class NightScene extends SurfaceView{
     float dpToMeterRatio; //dp per meter
     float pixelMeterRatio; //pixels per meter
     float sceneWidth, sceneDepth = 80f, sceneHeight = 200f; //expect to support scene with 200 m
-    private boolean isShowOngoing = true;
+    private boolean isShowOngoing = true, isSoundPoolReady;
     private Random mRandom;
+    protected SoundPool soundPool;
+    private int soundExplosionId;
+    private AudioManager audioManager;
+
+    private float mVolume;
 
     private void initDpi(Context context){
         Resources resources = context.getResources();
@@ -74,6 +86,33 @@ public class NightScene extends SurfaceView{
         sceneWidthHalf = sceneWidth  / 2;
         sceneHeightHalf = sceneHeight / 2;
         mRandom = new Random();
+
+        audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+
+        if (Build.VERSION.SDK_INT >= 21) {
+            SoundPool.Builder builder = new SoundPool.Builder();
+            builder.setMaxStreams(10);
+            AudioAttributes.Builder attributeBuilder = new AudioAttributes.Builder();
+            attributeBuilder.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC);
+            attributeBuilder.setUsage(AudioAttributes.USAGE_GAME);
+            attributeBuilder.setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED);
+            builder.setAudioAttributes(attributeBuilder.build());
+            soundPool = builder.build();
+        }else{
+            soundPool = new SoundPool(10, AudioManager.STREAM_MUSIC,0);
+        }
+
+
+        soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
+            @Override
+            public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
+                isSoundPoolReady = true;
+                mVolume = (float) audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                soundPool.play(sampleId,mVolume,mVolume,1, 0, 1f);
+            }
+        });
+
+
     }
 
     protected void addSpark(SparkBase base){
@@ -111,6 +150,9 @@ public class NightScene extends SurfaceView{
 
     protected void stop(){
         isShowOngoing = false;
+        if (soundPool != null){
+            soundPool.autoPause();
+        }
     }
 
     protected void play(){
@@ -159,6 +201,23 @@ public class NightScene extends SurfaceView{
                 }
             }
         }.start();
+    }
+
+    protected void playExplosionSound() {
+        Task.call(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                soundExplosionId = soundPool.load(getContext(), R.raw.explosion, 1);
+                return null;
+            }
+        }, Task.UI_THREAD_EXECUTOR);
+
+    }
+
+    protected void onDestroy(){
+        if (soundPool != null){
+            soundPool.release();
+        }
     }
 
     private float pixelToDp(float px){
