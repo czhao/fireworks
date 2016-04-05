@@ -16,15 +16,21 @@ import javax.vecmath.Vector3f;
  */
 public class Spark extends SparkBase {
 
-    protected Paint paint;
+    protected static Paint paint;
 
-    private final long lifeSpan = 2000l;
-
-    public Spark(Point3f position, Vector3f v) {
-        super(position, v);
+    static {
         paint = new Paint();
         paint.setAntiAlias(true);
         paint.setColor(Color.WHITE);
+    }
+
+    private final long lifeSpan = 2000l;
+
+    private int blurFactor = 4;
+    private float cacheScreenX, cacheScreenY;
+
+    public Spark(Point3f position, Vector3f v) {
+        super(position, v);
         this.scale = 2.5f;
         this.gravity = -0.5f;
         this.drag = 1f;
@@ -32,7 +38,22 @@ public class Spark extends SparkBase {
 
     @Override
     public void draw(Canvas canvas, float screenX, float screenY, float scale, boolean doEffects) {
+        paint.setAlpha(255);
         canvas.drawCircle(screenX, screenY, 2f * scale, paint);
+
+        if (System.currentTimeMillis() - startTime > 200){
+            float dx = screenX - cacheScreenX;
+            float dy = screenY - cacheScreenY;
+
+            for (int i = blurFactor; i > 0; i--){
+                paint.setAlpha(255 * i / blurFactor);
+                canvas.drawCircle(cacheScreenX, cacheScreenY, 2f * scale * i / blurFactor, paint);
+                cacheScreenX = cacheScreenX - dx;
+                cacheScreenY = cacheScreenY - dy;
+            }
+        }
+        cacheScreenX = screenX;
+        cacheScreenY = screenY;
     }
 
     @Override
@@ -69,7 +90,7 @@ public class Spark extends SparkBase {
         }
 
         //explore the shell
-        float shellScale = 0.6f * random.nextFloat() + 0.6f;
+        float shellScale = 0.3f * random.nextFloat() + 0.3f;
         float rootSpeedShell = random.nextFloat() * 1.8f + 0.8f; // 0.8 - 2.6
         Vector3f shellVelocity = new Vector3f(rootSpeed, rootSpeedShell, rootSpeedShell);
         for (int i = 0; i < 72; i++){
@@ -86,8 +107,8 @@ public class Spark extends SparkBase {
             scene.addSpark(sparkB);
         }
 
-        float ringScale = 0.65f * random.nextFloat() * 0.6f;
-        float rootSpeedRing = random.nextFloat() * 1.0f + 1.5f; //1.5-2.5
+        float ringScale = 0.95f * random.nextFloat() * 0.8f;
+        float rootSpeedRing = random.nextFloat() * 0.8f + .8f; //
         baseV = new Vector3f(rootSpeedRing, 0, rootSpeedRing);
 
         float rx = 1 - 2 * random.nextFloat();
@@ -98,7 +119,7 @@ public class Spark extends SparkBase {
             MathHelper.rotateY(ringVelocity, random.nextDouble() * 3);
             Vector3f newVelocity = new Vector3f(ringVelocity);
             MathHelper.rotateX(newVelocity,rx);
-            MathHelper.rotateX(newVelocity,rz);
+            MathHelper.rotateZ(newVelocity,rz);
             newVelocity.scale(random.nextFloat() / 5 + 1.5f);
 
             Vector3f newVelocityInvert = new Vector3f();

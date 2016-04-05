@@ -2,9 +2,8 @@ package com.garena.android.fireworks;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.view.Surface;
 import android.view.SurfaceHolder;
-import android.view.SurfaceView;
+import android.view.WindowManager;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -40,6 +39,9 @@ public class HomeActivity extends AppCompatActivity{
                 mNightScene.stop();
             }
         });
+
+        //keep the screen on
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     @Override

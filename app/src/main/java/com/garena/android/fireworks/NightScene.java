@@ -8,7 +8,6 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.SurfaceView;
 
 import java.util.ArrayList;
@@ -95,13 +94,21 @@ public class NightScene extends SurfaceView{
     }
 
     private void randomFire(){
-        if (System.currentTimeMillis() - lastFireTime > 5000){
-            float x =  (-mRandom.nextFloat() * sceneWidth + sceneWidthHalf) * 0.3f;
+        long time = System.currentTimeMillis();
+        if (time > 5000){
+
+            float x =  (-mRandom.nextFloat() * sceneWidth + sceneWidthHalf) * 0.2f;
             float y =  -mRandom.nextFloat() * 30;
             float z = -mRandom.nextFloat() * sceneDepth /4 - sceneDepth /2;
             Point3f pos = new Point3f(x, y, z);
-            Vector3f v = new Vector3f(0, 15f, 0);
-            sparks.add(new Spark(pos, v));
+            Vector3f v = new Vector3f(0, 10f, 0);
+
+            if (time % 2l == 1l) {
+                sparks.add(new Spark(pos, v));
+            }else{
+                sparks.add(new WaterfallSpark(pos, v));
+            }
+
             lastFireTime = System.currentTimeMillis();
         }
     }
@@ -132,7 +139,7 @@ public class NightScene extends SurfaceView{
                         } else {
                             PhysicsEngine.move(s, timeDelta);
                             //convert 3D to 2D
-                            float scale = sceneDepth / (sceneDepth + s.mPosition.z);
+                            float scale = 1.5f * sceneDepth / (sceneDepth + s.mPosition.z);
                             float x2d = s.mPosition.x * scale + sceneWidthHalf;
                             float y2d = s.mPosition.y * scale + sceneHeightHalf;
                             s.draw(canvas, (int)(x2d * pixelMeterRatio), screenHeight - (int)(y2d * pixelMeterRatio),scale, true);
@@ -146,7 +153,7 @@ public class NightScene extends SurfaceView{
                     if (sparks.size() > 0) {
                         try {
                             //60fps if possible
-                            Thread.sleep(15);
+                            Thread.sleep(5);
                         } catch (Exception e) {
                             //DO NOTHING
                         }
