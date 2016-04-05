@@ -23,7 +23,7 @@ public class WaterfallSpark extends Spark {
     }
 
     @Override
-    public void onDying(NightScene scene) {
+    public void onExplosion(NightScene scene) {
         int colorA = Color.rgb(random.nextInt(255), random.nextInt(255), random.nextInt(255));
 
         float ringScale = 0.95f * random.nextFloat() * 0.8f;

@@ -16,7 +16,7 @@ public class RingSpark extends SparkBase{
 
     //protected Paint paint;
 
-    final long lifeSpan = 5000; // life span 4 seconds
+    final long lifeSpan;
     private int blurFactor = 8;
     private int color;
     private int cacheIndex = 0;
@@ -30,8 +30,6 @@ public class RingSpark extends SparkBase{
         paint.setAntiAlias(true);
     }
 
-
-
     public RingSpark(Point3f position, Vector3f v, float scale, int color) {
         super(position, v);
         //paint = new Paint();
@@ -42,6 +40,7 @@ public class RingSpark extends SparkBase{
         this.alpha = 50;
         blurFactor = 8;
         drawingCache = new float[blurFactor][2];
+        lifeSpan = 5000l;
     }
 
     public RingSpark(Point3f position, Vector3f v, float scale, int color, float gravity, int streak) {
@@ -53,6 +52,7 @@ public class RingSpark extends SparkBase{
         this.color = color;
         this.alpha = 50;
         blurFactor = streak;
+        lifeSpan = streak * 300;
         drawingCache = new float[blurFactor][2];
     }
 
@@ -60,7 +60,6 @@ public class RingSpark extends SparkBase{
     public void draw(Canvas canvas, float screenX, float screenY, float scale, boolean doEffects) {
         //reset the painter
         paint.setColor(color);
-        //canvas.drawCircle(screenX, screenY , this.scale * scale, paint);
         drawingCache[cacheIndex][0] = screenX;
         drawingCache[cacheIndex][1] = screenY;
         cacheIndex++;
@@ -82,14 +81,13 @@ public class RingSpark extends SparkBase{
             alpha = 0;
         }
 
-        if (isCacheFilled && alpha > 0) {
+        if (isCacheFilled && alpha >= 0) {
             paint.setAlpha(alpha);
             Path p = new Path();
             p.moveTo(screenX, screenY);
             for (int i = blurFactor - 1; i >= 0; i--) {
                 p.lineTo(drawingCache[i][0], drawingCache[i][1]);
                 canvas.drawPath(p,paint);
-                //canvas.drawCircle(drawingCache[i][0], drawingCache[i][1], scale * i / blurFactor, paint);
             }
         }
     }

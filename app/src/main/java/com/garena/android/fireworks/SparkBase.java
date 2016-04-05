@@ -32,5 +32,5 @@ public abstract class SparkBase {
 
     public abstract boolean isDead();
 
-    public void onDying(NightScene sc){}
+    public void onExplosion(NightScene sc){}
 }

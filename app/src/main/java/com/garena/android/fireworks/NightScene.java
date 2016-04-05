@@ -73,19 +73,6 @@ public class NightScene extends SurfaceView{
         sceneWidth = pixelToDp(getWidth()) / dpToMeterRatio; //dynamically calculate the width in meters
         sceneWidthHalf = sceneWidth  / 2;
         sceneHeightHalf = sceneHeight / 2;
-        Point3f initStart = new Point3f(0, -30f, -30f);
-        Vector3f initVelocity = new Vector3f(0, 20f, 0);
-
-        Vector3f initVelocity2 = new Vector3f(0, 15f, 0);
-        sparks.add(new Spark(initStart, initVelocity));
-
-        Point3f initStart2 = new Point3f(10f, -20f, -20f);
-        sparks.add(new Spark(initStart2, initVelocity));
-
-        Point3f initStart3 = new Point3f(50f, -10f, 20f);
-        sparks.add(new Spark(initStart3, initVelocity2));
-
-        lastFireTime = 0;
         mRandom = new Random();
     }
 
@@ -94,8 +81,8 @@ public class NightScene extends SurfaceView{
     }
 
     private void randomFire(){
-        long time = System.currentTimeMillis();
-        if (time > 5000){
+        long time = System.currentTimeMillis() - lastFireTime;
+        if (time > 2000){
 
             float x =  (-mRandom.nextFloat() * sceneWidth + sceneWidthHalf) * 0.2f;
             float y =  -mRandom.nextFloat() * 30;
@@ -103,10 +90,16 @@ public class NightScene extends SurfaceView{
             Point3f pos = new Point3f(x, y, z);
             Vector3f v = new Vector3f(0, 10f, 0);
 
-            if (time % 2l == 1l) {
+            long random  = time % 4;
+
+            if (random == 1l) {
                 sparks.add(new Spark(pos, v));
-            }else{
+            }else if (random == 2l){
                 sparks.add(new WaterfallSpark(pos, v));
+            }else if (random == 3){
+                sparks.add(new BallSpark(pos, v));
+            }else{
+                sparks.add(new BallSpark(pos, v));
             }
 
             lastFireTime = System.currentTimeMillis();
@@ -147,10 +140,10 @@ public class NightScene extends SurfaceView{
                     }
                     sparks.removeAll(recycleList);
                     for (SparkBase s : recycleList) {
-                        s.onDying(NightScene.this);
+                        s.onExplosion(NightScene.this);
                     }
                     recycleList.clear();
-                    if (sparks.size() > 0) {
+                    /*if (sparks.size() > 0) {
                         try {
                             //60fps if possible
                             Thread.sleep(5);
@@ -159,7 +152,8 @@ public class NightScene extends SurfaceView{
                         }
                     } else {
                         randomFire();
-                    }
+                    }*/
+                    randomFire();
                     time = newTime;
                     getHolder().unlockCanvasAndPost(canvas);
                 }
