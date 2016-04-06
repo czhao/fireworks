@@ -29,7 +29,7 @@ import bolts.Task;
  *
  * @author zhaocong
  */
-public class NightScene extends SurfaceView{
+public class NightScene extends SurfaceView implements AudioManager.OnAudioFocusChangeListener{
 
     private float sceneWidthHalf, sceneHeightHalf;
     private float densityDpi;
@@ -67,7 +67,6 @@ public class NightScene extends SurfaceView{
     private boolean isShowOngoing = true, isSoundPoolReady;
     private Random mRandom;
     protected SoundPool soundPool;
-    private int soundExplosionId;
     private AudioManager audioManager;
 
     private float mVolume;
@@ -89,12 +88,24 @@ public class NightScene extends SurfaceView{
 
         audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
 
+        // Request audio focus for playback
+        int result = audioManager.requestAudioFocus(this,
+                // Use the music stream.
+                AudioManager.STREAM_MUSIC,
+                // Request permanent focus.
+                AudioManager.AUDIOFOCUS_GAIN);
+
+        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            isSoundPoolReady = true;
+        }
+
         if (Build.VERSION.SDK_INT >= 21) {
             SoundPool.Builder builder = new SoundPool.Builder();
             builder.setMaxStreams(10);
             AudioAttributes.Builder attributeBuilder = new AudioAttributes.Builder();
-            attributeBuilder.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC);
+            attributeBuilder.setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION);
             attributeBuilder.setUsage(AudioAttributes.USAGE_GAME);
+            attributeBuilder.setLegacyStreamType(AudioManager.STREAM_MUSIC);
             attributeBuilder.setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED);
             builder.setAudioAttributes(attributeBuilder.build());
             soundPool = builder.build();
@@ -111,8 +122,6 @@ public class NightScene extends SurfaceView{
                 soundPool.play(sampleId,mVolume,mVolume,1, 0, 1f);
             }
         });
-
-
     }
 
     protected void addSpark(SparkBase base){
@@ -127,7 +136,9 @@ public class NightScene extends SurfaceView{
             float y =  -mRandom.nextFloat() * 30;
             float z = -mRandom.nextFloat() * sceneDepth /4 - sceneDepth /2;
             Point3f pos = new Point3f(x, y, z);
-            Vector3f v = new Vector3f(0, 10f, 0);
+
+            //the vertical speed cannot be faster than the frame rate
+            Vector3f v = new Vector3f(0, 6f, 0);
 
             long random  = time % 4;
 
@@ -185,7 +196,7 @@ public class NightScene extends SurfaceView{
                         s.onExplosion(NightScene.this);
                     }
                     recycleList.clear();
-                    /*if (sparks.size() > 0) {
+                    if (sparks.size() > 0) {
                         try {
                             //60fps if possible
                             Thread.sleep(5);
@@ -194,7 +205,7 @@ public class NightScene extends SurfaceView{
                         }
                     } else {
                         randomFire();
-                    }*/
+                    }
                     randomFire();
                     time = newTime;
                     getHolder().unlockCanvasAndPost(canvas);
@@ -204,10 +215,12 @@ public class NightScene extends SurfaceView{
     }
 
     protected void playExplosionSound() {
+        if (!isSoundPoolReady)
+            return;
         Task.call(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                soundExplosionId = soundPool.load(getContext(), R.raw.explosion, 1);
+                soundPool.load(getContext(), R.raw.firecracker, 1);
                 return null;
             }
         }, Task.UI_THREAD_EXECUTOR);
@@ -218,6 +231,11 @@ public class NightScene extends SurfaceView{
         if (soundPool != null){
             soundPool.release();
         }
+    }
+
+    @Override
+    public void onAudioFocusChange(int focusChange) {
+        isSoundPoolReady = focusChange == AudioManager.AUDIOFOCUS_GAIN;
     }
 
     private float pixelToDp(float px){

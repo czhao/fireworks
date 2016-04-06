@@ -16,7 +16,7 @@ public class WaterfallSpark extends Spark {
 
     public static Random random = new Random();
 
-    public static final int WATERFALL_WIDTH = 60;
+    public static final int WATERFALL_WIDTH = 40;
 
     public WaterfallSpark(Point3f position, Vector3f v) {
         super(position, v);
@@ -28,7 +28,7 @@ public class WaterfallSpark extends Spark {
         int colorA = Color.rgb(random.nextInt(255), random.nextInt(255), random.nextInt(255));
 
         float ringScale = 0.95f * random.nextFloat() * 0.8f;
-        float rootSpeedRing = random.nextFloat() * 1.8f + 4.8f;
+        float rootSpeedRing = random.nextFloat() * 1.8f + 3.8f;
         Vector3f baseV = new Vector3f(rootSpeedRing, 0, 0);
 
         float ry = 1f - 0.5f * random.nextFloat();
