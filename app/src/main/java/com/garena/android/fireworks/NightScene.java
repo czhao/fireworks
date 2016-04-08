@@ -13,6 +13,7 @@ import android.os.Build;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.view.SurfaceView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,12 +65,12 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
     float dpToMeterRatio; //dp per meter
     float pixelMeterRatio; //pixels per meter
     float sceneWidth, sceneDepth = 80f, sceneHeight = 200f; //expect to support scene with 200 m
-    private boolean isShowOngoing = true, isSoundPoolReady;
+    private boolean isShowOngoing = true, isSoundPoolReady, isSlientHintShown = false;
     private Random mRandom;
     protected SoundPool soundPool;
     private AudioManager audioManager;
 
-    private float mVolume;
+    private int mVolume;
 
     private void initDpi(Context context){
         Resources resources = context.getResources();
@@ -118,8 +119,9 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
             @Override
             public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
                 isSoundPoolReady = true;
-                mVolume = (float) audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                soundPool.play(sampleId,mVolume,mVolume,1, 0, 1f);
+                int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+                float normalized = (float) mVolume / (float) maxVolume;
+                soundPool.play(sampleId,normalized,normalized,1, 0, 1f);
             }
         });
     }
@@ -221,6 +223,14 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
         Task.call(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
+                mVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                if (mVolume <= 0){
+                    if (!isSlientHintShown){
+                        Toast.makeText(getContext(),R.string.open_audio_hint, Toast.LENGTH_SHORT).show();
+                        isSlientHintShown = true;
+                    }
+                    return null; // do nothing to save the memory
+                }
                 soundPool.load(getContext(), R.raw.firecracker, 1);
                 return null;
             }

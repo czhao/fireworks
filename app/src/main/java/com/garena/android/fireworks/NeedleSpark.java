@@ -25,7 +25,7 @@ public class NeedleSpark extends RingSpark {
     public NeedleSpark(Point3f p, Vector3f v, int color) {
         super(p, v, 1f, color);
         this.gravity = -0.75f;
-        this.drag = 0.999f;
+        this.drag = 0.985f;
     }
 
     @Override
