@@ -140,18 +140,19 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
             //the vertical speed cannot be faster than the frame rate
             Vector3f v = new Vector3f(0, 6f, 0);
 
-            long random  = time % 4;
+            long random  = time % 6;
 
             if (random == 1l) {
                 sparks.add(new Spark(pos, v));
             }else if (random == 2l){
-                sparks.add(new WaterfallSpark(pos, v));
+                sparks.add(new GroupSpark(pos, v));
             }else if (random == 3){
                 sparks.add(new BallSpark(pos, v));
-            }else{
+            }else if (random == 4){
                 sparks.add(new BallSpark(pos, v));
+            }else{
+                sparks.add(new GroupSpark(pos, v));
             }
-
             lastFireTime = System.currentTimeMillis();
         }
     }
@@ -180,7 +181,7 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
                     Canvas canvas = getHolder().lockCanvas();
                     canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
                     for (SparkBase s : sparks) {
-                        if (s.isDead()) {
+                        if (s.isExploding()) {
                             recycleList.add(s);
                         } else {
                             PhysicsEngine.move(s, timeDelta);

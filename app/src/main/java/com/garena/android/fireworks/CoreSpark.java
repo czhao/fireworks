@@ -34,7 +34,7 @@ public class CoreSpark extends SparkBase{
     }
 
     @Override
-    public boolean isDead() {
+    public boolean isExploding() {
         return System.currentTimeMillis() - startTime > lifeSpan;
     }
 }

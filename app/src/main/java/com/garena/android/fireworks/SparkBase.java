@@ -28,9 +28,9 @@ public abstract class SparkBase {
         mVelocity = new Vector3f(v);
     }
 
-    public abstract void draw(Canvas canvas, float screenWidth, float screenHeight, float scale, boolean doEffects);
+    public abstract void draw(Canvas canvas, float screenX, float screenY, float scale, boolean doEffects);
 
-    public abstract boolean isDead();
+    public abstract boolean isExploding();
 
     public void onExplosion(NightScene sc){}
 }
