@@ -39,7 +39,7 @@ public class Spark extends SparkBase {
     @Override
     public void draw(Canvas canvas, float screenX, float screenY, float scale, boolean doEffects) {
         paint.setAlpha(255);
-        canvas.drawCircle(screenX, screenY, 1.2f * scale, paint);
+        //canvas.drawCircle(screenX, screenY, 1.2f * scale, paint);
 
         if (System.currentTimeMillis() - startTime > 200){
             float dx = screenX - cacheScreenX;
@@ -47,7 +47,8 @@ public class Spark extends SparkBase {
 
             for (int i = streak; i > 0; i--){
                 paint.setAlpha(255 * i / streak);
-                canvas.drawCircle(cacheScreenX, cacheScreenY, 1.5f * scale * i / streak, paint);
+                //canvas.drawCircle(cacheScreenX, cacheScreenY, 1.5f * scale * i / streak, paint);
+                canvas.drawLine(cacheScreenX, cacheScreenY, cacheScreenX,cacheScreenY - dy, paint);
                 cacheScreenX = cacheScreenX - dx;
                 cacheScreenY = cacheScreenY - dy;
             }
