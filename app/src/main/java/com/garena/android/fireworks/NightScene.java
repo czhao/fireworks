@@ -18,7 +18,6 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -73,6 +72,9 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
 
     private int mVolume;
     private int explosionSoundId = 0;
+    private boolean isAudioResourceReady = true;
+
+    private long mostRecentHintIssuedTime = 0L;
 
     private void initDpi(Context context){
         Resources resources = context.getResources();
@@ -91,6 +93,17 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
 
         audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
 
+        // Request audio focus for playback
+        int result = audioManager.requestAudioFocus(this,
+                // Use the music stream.
+                AudioManager.STREAM_MUSIC,
+                // Request permanent focus.
+                AudioManager.AUDIOFOCUS_GAIN);
+
+        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            isSoundPoolReady = true;
+        }
+
         if (Build.VERSION.SDK_INT >= 21) {
             SoundPool.Builder builder = new SoundPool.Builder();
             builder.setMaxStreams(5);
@@ -102,17 +115,15 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
             builder.setAudioAttributes(attributeBuilder.build());
             soundPool = builder.build();
         }else{
-            soundPool = new SoundPool(10, AudioManager.STREAM_MUSIC,0);
+            soundPool = new SoundPool(5, AudioManager.STREAM_MUSIC,0);
         }
 
 
         soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
             @Override
             public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
-                isSoundPoolReady = true;
-                int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-                float normalized = (float) mVolume / (float) maxVolume;
-                soundPool.play(sampleId,normalized,normalized,1, 0, 1f);
+                isAudioResourceReady = false;
+                playLoadedExplosionStream();
             }
         });
     }
@@ -158,23 +169,14 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
         isShowOngoing = false;
         if (soundPool != null){
             soundPool.autoPause();
+            isSoundPoolReady = false;
+            isAudioResourceReady = false;
         }
     }
 
     protected void play(){
         time = System.currentTimeMillis();
         isShowOngoing = true;
-
-        // Request audio focus for playback
-        int result = audioManager.requestAudioFocus(this,
-                // Use the music stream.
-                AudioManager.STREAM_MUSIC,
-                // Request permanent focus.
-                AudioManager.AUDIOFOCUS_GAIN);
-
-        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            isSoundPoolReady = true;
-        }
 
         new Thread(){
             @Override
@@ -204,6 +206,7 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
                     recycleList.clear();
                     if (sparks.size() > 0) {
                         //do nothing
+                        mostRecentHintIssuedTime = newTime;
                     } else {
                         //randomFire();
                         try {
@@ -211,6 +214,9 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
                             Thread.sleep(16);
                         } catch (Exception e) {
                             //DO NOTHING
+                        }
+                        if (newTime - mostRecentHintIssuedTime > 5000L){
+                            showClappingHint(newTime);
                         }
                     }
                     //randomFire();
@@ -225,8 +231,15 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
         }.start();
     }
 
+    /**
+     * This is usually called via the background thread to play the sound effect
+     */
     protected void playExplosionSound() {
-        if (!isSoundPoolReady || explosionSoundId == 0) {
+        if (!isSoundPoolReady) {
+            return;
+        }
+
+        if (!isAudioResourceReady || explosionSoundId == 0) {
             Task.call(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
@@ -238,21 +251,44 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
                         }
                         return null; // do nothing to save the memory
                     }
-                    explosionSoundId = soundPool.load(getContext(), R.raw.firecracker, 1);
+                    explosionSoundId = soundPool.load(getContext(), R.raw.explosion_fuzz, 1);
                     return null;
                 }
-            }, Task.UI_THREAD_EXECUTOR);
+            }, Task.BACKGROUND_EXECUTOR);
         }else{
-            int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-            float normalized = (float) mVolume / (float) maxVolume;
-            soundPool.play(explosionSoundId,normalized,normalized,1, 0, 1f);
+            Task.call(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    //play the sound effect directly
+                    playLoadedExplosionStream();
+                    return null;
+                }
+            },Task.UI_THREAD_EXECUTOR);
         }
+    }
+
+    private void playLoadedExplosionStream(){
+        int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        float normalized = (float) mVolume / (float) maxVolume;
+        soundPool.play(explosionSoundId,normalized,normalized,1, 0, 1.2f);
     }
 
     protected void onDestroy(){
         if (soundPool != null){
             soundPool.release();
         }
+    }
+
+    private void showClappingHint(long newTime){
+        Task.call(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                Toast.makeText(getContext(), R.string.make_some_noise, Toast.LENGTH_SHORT).show();
+
+                return null;
+            }
+        }, Task.UI_THREAD_EXECUTOR);
+        mostRecentHintIssuedTime = newTime;
     }
 
     @Override

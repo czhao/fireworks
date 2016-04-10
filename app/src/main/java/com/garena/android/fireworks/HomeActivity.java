@@ -7,6 +7,7 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -120,7 +121,7 @@ public class HomeActivity extends AppCompatActivity{
     final int frequency = 8000; //frequency for radio capture
     final int windowSize = 15; //magic number
     int channelConfiguration = AudioFormat.CHANNEL_IN_DEFAULT;
-    int audioEncoding = AudioFormat.ENCODING_PCM_16BIT;
+    int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
     final int blockSize = 256;
     private AudioRecord audioRecord;
     final long COOL_DOWN = 400;
@@ -131,11 +132,23 @@ public class HomeActivity extends AppCompatActivity{
         @Override
         protected Boolean doInBackground(Void... params) {
 
-            int bufferSize = AudioRecord.getMinBufferSize(frequency, channelConfiguration, audioEncoding);
+            int bufferSize = AudioRecord.getMinBufferSize(frequency, channelConfiguration, audioFormat);
 
-            audioRecord = new AudioRecord(
-                    MediaRecorder.AudioSource.DEFAULT, frequency,
-                    channelConfiguration, audioEncoding, bufferSize);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                AudioRecord.Builder builder = new AudioRecord.Builder();
+                builder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                builder.setBufferSizeInBytes(bufferSize);
+                AudioFormat.Builder formatBuilder = new AudioFormat.Builder();
+                formatBuilder.setChannelIndexMask(channelConfiguration);
+                formatBuilder.setEncoding(audioFormat);
+                formatBuilder.setSampleRate(frequency);
+                builder.setAudioFormat(formatBuilder.build());
+                audioRecord = builder.build();
+            }else{
+                audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, frequency, channelConfiguration,
+                        audioFormat, bufferSize);
+            }
+
 
             int bufferReadResult;
             short[] buffer = new short[blockSize];

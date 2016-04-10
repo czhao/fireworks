@@ -4,4 +4,5 @@
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
     <string name="open_audio_hint">Open the audio for the best show :-)</string>
+    <string name="make_some_noise">Make some noise :D</string>
 </resources>
