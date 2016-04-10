@@ -18,7 +18,9 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.vecmath.Point3f;
 import javax.vecmath.Vector3f;
@@ -34,8 +36,6 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
 
     private float sceneWidthHalf, sceneHeightHalf;
     private float densityDpi;
-
-    private final static String TAG = "scene";
 
     public NightScene(Context context) {
         super(context);
@@ -69,8 +69,10 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
     private Random mRandom;
     protected SoundPool soundPool;
     private AudioManager audioManager;
+    private ConcurrentLinkedQueue<Spark> waitingList = new ConcurrentLinkedQueue<>();
 
     private int mVolume;
+    private int explosionSoundId = 0;
 
     private void initDpi(Context context){
         Resources resources = context.getResources();
@@ -89,20 +91,9 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
 
         audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
 
-        // Request audio focus for playback
-        int result = audioManager.requestAudioFocus(this,
-                // Use the music stream.
-                AudioManager.STREAM_MUSIC,
-                // Request permanent focus.
-                AudioManager.AUDIOFOCUS_GAIN);
-
-        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            isSoundPoolReady = true;
-        }
-
         if (Build.VERSION.SDK_INT >= 21) {
             SoundPool.Builder builder = new SoundPool.Builder();
-            builder.setMaxStreams(10);
+            builder.setMaxStreams(5);
             AudioAttributes.Builder attributeBuilder = new AudioAttributes.Builder();
             attributeBuilder.setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION);
             attributeBuilder.setUsage(AudioAttributes.USAGE_GAME);
@@ -130,11 +121,11 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
         sparks.add(base);
     }
 
-    private void randomFire(){
+    protected void randomFire(){
         long time = System.currentTimeMillis() - lastFireTime;
-        if (time > 2000){
-
-            float x =  (-mRandom.nextFloat() * sceneWidth + sceneWidthHalf) * 0.2f;
+        //implement basic weak boundary check
+        if (time > 100){
+            float x =  (-mRandom.nextFloat() * sceneWidth * .5f + sceneWidthHalf) * .2f;
             float y =  -mRandom.nextFloat() * 30;
             float z = -mRandom.nextFloat() * sceneDepth /4 - sceneDepth /2;
             Point3f pos = new Point3f(x, y, z);
@@ -142,19 +133,20 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
             //the vertical speed cannot be faster than the frame rate
             Vector3f v = new Vector3f(0, 6f, 0);
 
-            long random  = time % 6;
+            long random  = time % 5;
 
-            if (random == 1l) {
-                sparks.add(new Spark(pos, v));
-            }else if (random == 2l){
-                sparks.add(new GroupSpark(pos, v));
-            }else if (random == 3){
-                sparks.add(new BallSpark(pos, v));
-            }else if (random == 4){
-                sparks.add(new BallSpark(pos, v));
+            if (random == 1L) {
+                waitingList.add(new Spark(pos, v));
+            }else if (random == 2L){
+                waitingList.add(new GroupSpark(pos, v));
+            }else if (random == 3L){
+                waitingList.add(new BallSpark(pos, v));
+            }else if (random == 4L){
+                waitingList.add(new BallSpark(pos, v));
             }else{
-                sparks.add(new GroupSpark(pos, v));
+                waitingList.add(new GroupSpark(pos, v));
             }
+
             lastFireTime = System.currentTimeMillis();
         }
     }
@@ -172,6 +164,17 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
     protected void play(){
         time = System.currentTimeMillis();
         isShowOngoing = true;
+
+        // Request audio focus for playback
+        int result = audioManager.requestAudioFocus(this,
+                // Use the music stream.
+                AudioManager.STREAM_MUSIC,
+                // Request permanent focus.
+                AudioManager.AUDIOFOCUS_GAIN);
+
+        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            isSoundPoolReady = true;
+        }
 
         new Thread(){
             @Override
@@ -200,42 +203,50 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
                     }
                     recycleList.clear();
                     if (sparks.size() > 0) {
+                        //do nothing
+                    } else {
+                        //randomFire();
                         try {
                             //60fps if possible
-                            Thread.sleep(5);
+                            Thread.sleep(16);
                         } catch (Exception e) {
                             //DO NOTHING
                         }
-                    } else {
-                        randomFire();
                     }
-                    randomFire();
+                    //randomFire();
                     time = newTime;
                     getHolder().unlockCanvasAndPost(canvas);
+                    while (waitingList.size() > 0){
+                        //remove the item
+                        sparks.add(waitingList.poll());
+                    }
                 }
             }
         }.start();
     }
 
     protected void playExplosionSound() {
-        if (!isSoundPoolReady)
-            return;
-        Task.call(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                mVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                if (mVolume <= 0){
-                    if (!isSlientHintShown){
-                        Toast.makeText(getContext(),R.string.open_audio_hint, Toast.LENGTH_SHORT).show();
-                        isSlientHintShown = true;
+        if (!isSoundPoolReady || explosionSoundId == 0) {
+            Task.call(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    mVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                    if (mVolume <= 0) {
+                        if (!isSlientHintShown) {
+                            Toast.makeText(getContext(), R.string.open_audio_hint, Toast.LENGTH_SHORT).show();
+                            isSlientHintShown = true;
+                        }
+                        return null; // do nothing to save the memory
                     }
-                    return null; // do nothing to save the memory
+                    explosionSoundId = soundPool.load(getContext(), R.raw.firecracker, 1);
+                    return null;
                 }
-                soundPool.load(getContext(), R.raw.firecracker, 1);
-                return null;
-            }
-        }, Task.UI_THREAD_EXECUTOR);
-
+            }, Task.UI_THREAD_EXECUTOR);
+        }else{
+            int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+            float normalized = (float) mVolume / (float) maxVolume;
+            soundPool.play(explosionSoundId,normalized,normalized,1, 0, 1f);
+        }
     }
 
     protected void onDestroy(){

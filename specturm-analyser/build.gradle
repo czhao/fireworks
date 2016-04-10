@@ -1,11 +1,10 @@
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.3"
+    buildToolsVersion "24.0.0 rc2"
 
     defaultConfig {
-        applicationId "com.garena.android.fireworks"
         minSdkVersion 19
         targetSdkVersion 23
         versionCode 1
@@ -22,9 +21,5 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
-    compile 'javax.vecmath:vecmath:1.5.2'
-    compile 'com.parse.bolts:bolts-tasks:1.4.0'
-    compile 'com.android.support:appcompat-v7:23.2.1'
-    compile 'com.android.support:support-v4:23.2.1'
-    compile project(':specturm-analyser')
+    compile 'com.android.support:appcompat-v7:23.3.0'
 }
