@@ -12,6 +12,7 @@ import android.media.SoundPool;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.SurfaceView;
 import android.widget.Toast;
 
@@ -64,7 +65,7 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
     float dpToMeterRatio; //dp per meter
     float pixelMeterRatio; //pixels per meter
     float sceneWidth, sceneDepth = 80f, sceneHeight = 200f; //expect to support scene with 200 m
-    private boolean isShowOngoing = true, isSoundPoolReady, isSlientHintShown = false;
+    private boolean isShowOngoing = true, isFocusAcquired, isSlientHintShown = false;
     private Random mRandom;
     protected SoundPool soundPool;
     private AudioManager audioManager;
@@ -93,22 +94,11 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
 
         audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
 
-        // Request audio focus for playback
-        int result = audioManager.requestAudioFocus(this,
-                // Use the music stream.
-                AudioManager.STREAM_MUSIC,
-                // Request permanent focus.
-                AudioManager.AUDIOFOCUS_GAIN);
-
-        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            isSoundPoolReady = true;
-        }
-
         if (Build.VERSION.SDK_INT >= 21) {
             SoundPool.Builder builder = new SoundPool.Builder();
             builder.setMaxStreams(5);
             AudioAttributes.Builder attributeBuilder = new AudioAttributes.Builder();
-            attributeBuilder.setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION);
+            attributeBuilder.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC);
             attributeBuilder.setUsage(AudioAttributes.USAGE_GAME);
             attributeBuilder.setLegacyStreamType(AudioManager.STREAM_MUSIC);
             attributeBuilder.setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED);
@@ -169,14 +159,33 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
         isShowOngoing = false;
         if (soundPool != null){
             soundPool.autoPause();
-            isSoundPoolReady = false;
             isAudioResourceReady = false;
+        }
+
+        if (audioManager != null){
+            //remove the callbacks
+            audioManager.abandonAudioFocus(this);
+            isFocusAcquired = false;
         }
     }
 
     protected void play(){
         time = System.currentTimeMillis();
         isShowOngoing = true;
+
+        // Request audio focus for playback
+        int result = audioManager.requestAudioFocus(this,
+                // Use the music stream.
+                AudioManager.STREAM_MUSIC,
+                // Request permanent focus.
+                AudioManager.AUDIOFOCUS_GAIN);
+
+        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            isFocusAcquired = true;
+            Log.d("fix","get audio focus:"+result);
+        }else{
+            Log.d("fix","cannot get audio focus:"+result);
+        }
 
         new Thread(){
             @Override
@@ -235,7 +244,7 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
      * This is usually called via the background thread to play the sound effect
      */
     protected void playExplosionSound() {
-        if (!isSoundPoolReady) {
+        if (!isFocusAcquired) {
             return;
         }
 
@@ -270,6 +279,9 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
     private void playLoadedExplosionStream(){
         int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         float normalized = (float) mVolume / (float) maxVolume;
+        if (inDuckMode){
+            normalized = normalized / 2;
+        }
         soundPool.play(explosionSoundId,normalized,normalized,1, 0, 1.2f);
     }
 
@@ -291,9 +303,26 @@ public class NightScene extends SurfaceView implements AudioManager.OnAudioFocus
         mostRecentHintIssuedTime = newTime;
     }
 
+    private boolean inDuckMode = false;
+
     @Override
     public void onAudioFocusChange(int focusChange) {
-        isSoundPoolReady = focusChange == AudioManager.AUDIOFOCUS_GAIN;
+        Log.d("fix","onAudioFocusChange:"+focusChange);
+        if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK){
+            //lower the volume
+            inDuckMode = true;
+        }else if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT ){
+            isFocusAcquired = false;
+            inDuckMode = false;
+        }else if (focusChange == AudioManager.AUDIOFOCUS_GAIN){
+            isFocusAcquired = true;
+            inDuckMode = false;
+        }else if (focusChange == AudioManager.AUDIOFOCUS_LOSS){
+            //no way to get the focus back, don't set the flag as I may just request the focus successfully
+        } else{
+            isFocusAcquired = false;
+            inDuckMode = false;
+        }
     }
 
     private float pixelToDp(float px){

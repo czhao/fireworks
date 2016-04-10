@@ -26,12 +26,12 @@ public class Spark extends SparkBase {
 
     private final long lifeSpan = 2000l;
 
-    private int streak = 4;
-    private float cacheScreenX, cacheScreenY;
+    private int streak = 10;
+    private static float cacheScreenX, cacheScreenY;
 
     public Spark(Point3f position, Vector3f v) {
         super(position, v);
-        this.scale = 2.5f;
+        this.scale = 1f;
         this.gravity = -0.5f;
         this.drag = 1f;
     }
@@ -39,22 +39,18 @@ public class Spark extends SparkBase {
     @Override
     public void draw(Canvas canvas, float screenX, float screenY, float scale, boolean doEffects) {
         paint.setAlpha(255);
-        //canvas.drawCircle(screenX, screenY, 1.2f * scale, paint);
-
-        if (System.currentTimeMillis() - startTime > 200){
-            float dx = screenX - cacheScreenX;
-            float dy = screenY - cacheScreenY;
-
-            for (int i = streak; i > 0; i--){
-                paint.setAlpha(255 * i / streak);
-                //canvas.drawCircle(cacheScreenX, cacheScreenY, 1.5f * scale * i / streak, paint);
-                canvas.drawLine(cacheScreenX, cacheScreenY, cacheScreenX,cacheScreenY - dy, paint);
-                cacheScreenX = cacheScreenX - dx;
-                cacheScreenY = cacheScreenY - dy;
-            }
-        }
+        paint.setStrokeWidth(1f * scale);
         cacheScreenX = screenX;
         cacheScreenY = screenY;
+        if (System.currentTimeMillis() - startTime > 200){
+            float dy = 2f * scale;
+            for (int i = streak; i > 0; i--){
+                paint.setAlpha(255 * i / streak);
+                paint.setStrokeWidth(scale * i / streak);
+                canvas.drawLine(cacheScreenX, cacheScreenY, cacheScreenX,cacheScreenY + dy, paint);
+                cacheScreenY = cacheScreenY + dy;
+            }
+        }
     }
 
     @Override
