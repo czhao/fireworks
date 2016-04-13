@@ -10,5 +10,13 @@
        android:layout_height="match_parent"
        android:id="@+id/night_scene"
        />
+   
+   <TextView
+       android:id="@+id/debug_information"
+       android:layout_width="match_parent"
+       android:lines="2"
+       android:layout_gravity="top"
+       android:textColor="@android:color/white"
+       android:layout_height="wrap_content"/>
 
 </FrameLayout>

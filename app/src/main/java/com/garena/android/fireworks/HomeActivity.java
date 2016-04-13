@@ -15,11 +15,17 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.SurfaceHolder;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.util.concurrent.Callable;
+
+import bolts.Task;
 
 /**
- * An example full-screen activity that shows and hides the system UI (i.e.
- * status bar and navigation/system bar) with user interaction.
+ * Home activity for the firework scene
  */
 public class HomeActivity extends AppCompatActivity{
 
@@ -31,6 +37,7 @@ public class HomeActivity extends AppCompatActivity{
 
     private final static String TAG = "scene";
 
+    private TextView mDebugView = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +63,10 @@ public class HomeActivity extends AppCompatActivity{
                 mNightScene.stop();
             }
         });
+        mDebugView  = (TextView)findViewById(R.id.debug_information);
+        if (mDebugView != null){
+            mDebugView.setVisibility(BuildConfig.DEBUG? View.VISIBLE: View.GONE);
+        }
 
         //keep the screen on
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -119,7 +130,7 @@ public class HomeActivity extends AppCompatActivity{
 
     //parameters for audio capture
     final int frequency = 8000; //frequency for radio capture
-    final int windowSize = 15; //magic number
+    final int windowSize = 30; //magic number
     int channelConfiguration = AudioFormat.CHANNEL_IN_DEFAULT;
     int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
     final int blockSize = 256;
@@ -167,6 +178,7 @@ public class HomeActivity extends AppCompatActivity{
             double sum = 0;
             double minE = 100;
             double maxE = -100;
+            double thresholdAdjusted = 0f;
             int sampleCount = 0;
             double[] samples = new double[SAMPLE_TOTAL];
 
@@ -231,7 +243,29 @@ public class HomeActivity extends AppCompatActivity{
                                     intermediateSum += Math.pow(samples[i] - mean, 2);
                                 }
                                 threshold = Math.sqrt(intermediateSum/sampleCount);
-                                Log.i(TAG, "threshold benchmarking done:"+threshold);
+
+                                //perform naive noise cancellation
+                                if (mean > 0.15f){
+                                    thresholdAdjusted = 1.2 * threshold;
+                                }else{
+                                    thresholdAdjusted = 2 * threshold;
+                                }
+
+                                if (BuildConfig.DEBUG){
+                                    //define final value for logging only
+                                    final double meanf = mean;
+                                    final double thresholdf = thresholdAdjusted;
+                                    Task.call(new Callable<Void>() {
+                                        @Override
+                                        public Void call() throws Exception {
+                                            Toast.makeText(HomeActivity.this,"mean:"+meanf+" threshold:"+thresholdf, Toast.LENGTH_SHORT).show();
+                                            mDebugView.setText("mean:"+meanf+"\nthreshold:"+thresholdf);
+                                            return null;
+                                        }
+                                    }, Task.UI_THREAD_EXECUTOR);
+
+                                    Log.i(TAG, "threshold benchmarking done:"+threshold+ " mean:"+mean);
+                                }
                             }
                         }
 
@@ -239,12 +273,16 @@ public class HomeActivity extends AppCompatActivity{
                             coolDown = false;
                         }
 
+                        if (BuildConfig.DEBUG) {
+                            //Log.i(TAG, "normalized:" + normalized + " threshold:" + threshold +  " mean:"+mean);
+                            Log.i(TAG, "prob:" +((normalized - mean)/thresholdAdjusted));
+                        }
+
                         if (!isSampling && !coolDown) {
                             //compute the gradient
-                            if (!isInBurst && normalized - mean > 3 * threshold){
+                            if (!isInBurst && normalized - mean > thresholdAdjusted){
                                 isInBurst = true;
                                 burstPeak = normalized;
-                                Log.i(TAG, "normalized:" + normalized + " threshold:"+threshold);
                             }else if (isInBurst && burstPeak < normalized){
                                 burstPeak = normalized;
                             }else if (isInBurst && burstPeak > normalized){
@@ -252,6 +290,19 @@ public class HomeActivity extends AppCompatActivity{
                                 isInBurst = false;
                                 coolDown = true;
                                 coolDownExpiry = System.currentTimeMillis() + COOL_DOWN;
+                            }else{
+                                if (BuildConfig.DEBUG){
+                                    //define final value for logging only
+                                    final double meanFinal = mean;
+                                    final double newValue = normalized;
+                                    Task.call(new Callable<Void>() {
+                                        @Override
+                                        public Void call() throws Exception {
+                                            mDebugView.setText("mean:"+meanFinal+"\nlast sample:"+newValue);
+                                            return null;
+                                        }
+                                    }, Task.UI_THREAD_EXECUTOR);
+                                }
                             }
                         }
                         firstToClear++;
