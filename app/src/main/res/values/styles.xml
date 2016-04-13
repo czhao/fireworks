@@ -10,7 +10,7 @@
 
     <style name="SplashTheme" parent="AppTheme">
         <item name="android:windowActionBarOverlay">true</item>
-        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:windowBackground">@color/theme</item>
     </style>
 
     <style name="FullscreenTheme" parent="AppTheme">
