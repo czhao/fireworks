@@ -1,7 +1,5 @@
 package com.garena.android.fireworks;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
@@ -9,9 +7,6 @@ import android.media.MediaRecorder;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -75,16 +70,11 @@ public class HomeActivity extends AppCompatActivity{
     @Override
     protected void onResume() {
         super.onResume();
-
         this.setVolumeControlStream(AudioManager.STREAM_MUSIC);
-        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO);
 
-        if (PackageManager.PERMISSION_GRANTED == permissionCheck) {
+        if (recordingTask == null){
             recordingTask = new AudioMonitorTask();
             recordingTask.execute();
-        }else{
-            //request for permission
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSION_REQUEST_RECORD_AUDIO);
         }
 
         //generate the sparks
@@ -113,19 +103,6 @@ public class HomeActivity extends AppCompatActivity{
     protected void onDestroy() {
         super.onDestroy();
         mNightScene.onDestroy();
-    }
-
-    private static final int PERMISSION_REQUEST_RECORD_AUDIO = 1221;
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == PERMISSION_REQUEST_RECORD_AUDIO) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                //start the recording task
-                recordingTask = new AudioMonitorTask();
-                recordingTask.execute();
-            }
-        }
     }
 
     //parameters for audio capture
